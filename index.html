@@ -1,0 +1,757 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>m3u8 剧集播放器</title>
+  <link href="https://cdn.bootcdn.net/ajax/libs/video.js/8.10.0/video-js.min.css" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans', Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .center-box {
+      max-width: 650px;
+      margin: 40px auto 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      padding: 40px 36px 32px 36px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .center-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.8s;
+    }
+    
+    .center-box:hover::before {
+      left: 100%;
+    }
+    
+    h1 {
+      color: #4c51bf;
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(76, 81, 191, 0.1);
+      background: linear-gradient(135deg, #4c51bf, #667eea);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .desc {
+      color: #64748b;
+      font-size: 16px;
+      margin-bottom: 28px;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+      padding: 16px;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      resize: vertical;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    textarea:focus {
+      border-color: #667eea;
+      outline: none;
+      background: #ffffff;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+      transform: translateY(-1px);
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.5s ease;
+    }
+    
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #4a5568;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .msg {
+      margin: 16px 0 0 0;
+      font-size: 15px;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: none;
+      font-weight: 500;
+      animation: slideIn 0.4s ease;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .msg.show {
+      display: block;
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .msg.success {
+      color: #065f46;
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border: 1px solid #6ee7b7;
+    }
+    
+    .msg.error {
+      color: #dc2626;
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border: 1px solid #f87171;
+    }
+    
+    /* 播放器区域 */
+    .player-layout {
+      display: flex;
+      flex-direction: row;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      align-items: flex-start;
+      justify-content: center;
+      width: 100vw;
+      min-height: 100vh;
+    }
+    
+    .episode-list {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      overflow-y: auto;
+      height: 100vh;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .episode-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .episode-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .episode-list::-webkit-scrollbar-thumb {
+      background: rgba(102, 126, 234, 0.3);
+      border-radius: 3px;
+    }
+    
+    .episode-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(102, 126, 234, 0.5);
+    }
+    
+    .episode-list li {
+      padding: 18px 24px;
+      cursor: pointer;
+      font-size: 16px;
+      color: #374151;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      position: relative;
+      font-weight: 500;
+    }
+    
+    .episode-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+    }
+    
+    .episode-list li.active::before,
+    .episode-list li:hover::before {
+      width: 4px;
+    }
+    
+    .episode-list li.active,
+    .episode-list li:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #4c51bf;
+      font-weight: 700;
+      transform: translateX(8px);
+    }
+    
+    .player-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+    
+    .video-container {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      background: #000;
+    }
+    
+    .video-container video {
+      border-radius: 16px;
+    }
+    
+    .back-btn {
+      position: static;
+      margin: 0 0 24px 0;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1024px) {
+      .player-layout {
+        flex-direction: column;
+        align-items: stretch;
+        min-height: unset;
+      }
+      
+      .episode-list {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .episode-list li {
+        border-bottom: none;
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 16px 20px;
+        white-space: nowrap;
+        min-width: 120px;
+      }
+      
+      .episode-list li::before {
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 0;
+      }
+      
+      .episode-list li.active::before,
+      .episode-list li:hover::before {
+        width: 100%;
+        height: 4px;
+      }
+      
+      .episode-list li.active,
+      .episode-list li:hover {
+        transform: translateY(-2px);
+      }
+      
+      .player-main {
+        padding: 16px;
+        min-height: unset;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .center-box {
+        margin: 20px;
+        padding: 24px 20px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .btn-group {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+      
+      textarea {
+        min-height: 150px;
+        font-size: 13px;
+      }
+    }
+    
+    /* 加载动画 */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 脉冲效果 */
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 配置界面 -->
+  <div class="center-box" id="configPage">
+    <h1>🎬 m3u8 剧集播放器</h1>
+    <div class="desc">✨ 输入剧集JSON配置，即可生成精美的在线播放器。支持m3u8格式，左侧选集，右侧播放。</div>
+    <textarea id="jsonInput" placeholder='请输入JSON配置，例如：&#10;[&#10;  {"title": "第01集", "url": "https://example.com/1.m3u8"},&#10;  {"title": "第02集", "url": "https://example.com/2.m3u8"}&#10;]'></textarea>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="parseAndRender()">
+        <span id="generateText">🚀 生成播放器</span>
+      </button>
+      <button class="btn btn-secondary" onclick="clearJsonInput()">🧹 清空内容</button>
+    </div>
+    <div id="errorMessage" class="msg error"></div>
+    <div id="successMessage" class="msg success"></div>
+  </div>
+
+  <!-- 播放器界面 -->
+  <div class="player-layout" id="playerPage" style="display:none;">
+    <ul class="episode-list" id="episodeList"></ul>
+    <div class="player-main">
+      <button class="back-btn" onclick="backToConfig()">← 返回配置</button>
+      <div class="video-container">
+        <video id="videoPlayer" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="563"
+          data-setup='{"playbackRates": [0.5, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 4.5 ,5]}'>
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.bootcdn.net/ajax/libs/video.js/8.10.0/video.min.js"></script>
+  <script>
+    let episodes = [];
+    let player = null;
+    let currentEpisodeIndex = 0;
+
+    function hideAllMessages() {
+      const errorEl = document.getElementById('errorMessage');
+      const successEl = document.getElementById('successMessage');
+      errorEl.classList.remove('show');
+      successEl.classList.remove('show');
+      setTimeout(() => {
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+      }, 300);
+    }
+
+    function showError(msg) {
+      hideAllMessages();
+      const errorEl = document.getElementById('errorMessage');
+      errorEl.textContent = '❌ ' + msg;
+      errorEl.style.display = 'block';
+      setTimeout(() => errorEl.classList.add('show'), 10);
+    }
+
+    function showSuccess(msg) {
+      hideAllMessages();
+      const successEl = document.getElementById('successMessage');
+      successEl.textContent = '✅ ' + msg;
+      successEl.style.display = 'block';
+      setTimeout(() => {
+        successEl.classList.add('show');
+        successEl.classList.add('pulse');
+        setTimeout(() => successEl.classList.remove('pulse'), 2000);
+      }, 10);
+    }
+
+    function clearJsonInput() {
+      const textarea = document.getElementById('jsonInput');
+      textarea.style.transform = 'scale(0.98)';
+      setTimeout(() => {
+        textarea.value = '';
+        textarea.style.transform = 'scale(1)';
+        showSuccess('内容已清空，可重新输入');
+      }, 150);
+    }
+
+    function parseAndRender() {
+      const jsonText = document.getElementById('jsonInput').value.trim();
+      const generateBtn = document.querySelector('.btn-primary');
+      const generateText = document.getElementById('generateText');
+      
+      if (!jsonText) {
+        showError('请输入JSON配置数据');
+        return;
+      }
+
+      // 显示加载状态
+      generateText.innerHTML = '<span class="loading"></span>解析中...';
+      generateBtn.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        try {
+          const parsedData = JSON.parse(jsonText);
+          if (!Array.isArray(parsedData)) throw new Error('JSON数据必须是数组格式');
+          if (parsedData.length === 0) throw new Error('剧集列表不能为空');
+          
+          for (let i = 0; i < parsedData.length; i++) {
+            const ep = parsedData[i];
+            if (!ep.title || !ep.url) throw new Error(`第${i + 1}项缺少title或url字段`);
+          }
+          
+          episodes = parsedData;
+          generateText.innerHTML = '✨ 生成成功';
+          showSuccess(`配置解析成功！共发现 ${episodes.length} 集内容`);
+          
+          setTimeout(() => {
+            renderPlayer();
+            generateText.innerHTML = '🚀 生成播放器';
+            generateBtn.style.pointerEvents = 'auto';
+          }, 1200);
+          
+        } catch (e) {
+          generateText.innerHTML = '🚀 生成播放器';
+          generateBtn.style.pointerEvents = 'auto';
+          showError('JSON解析失败: ' + e.message);
+        }
+      }, 800);
+    }
+
+    function renderPlayer() {
+      const configPage = document.getElementById('configPage');
+      const playerPage = document.getElementById('playerPage');
+      
+      // 添加淡出动画
+      configPage.style.opacity = '0';
+      configPage.style.transform = 'scale(0.95)';
+      
+      setTimeout(() => {
+        configPage.style.display = 'none';
+        playerPage.style.display = 'flex';
+        playerPage.style.opacity = '0';
+        
+        // 渲染剧集列表
+        const list = document.getElementById('episodeList');
+        list.innerHTML = '';
+        episodes.forEach((ep, idx) => {
+          const li = document.createElement('li');
+          li.textContent = `${idx + 1}. ${ep.title}`;
+          li.onclick = () => playEpisode(idx);
+          if (idx === 0) li.classList.add('active');
+          list.appendChild(li);
+          
+          // 添加渐入动画
+          li.style.opacity = '0';
+          li.style.transform = 'translateX(-20px)';
+          setTimeout(() => {
+            li.style.transition = 'all 0.4s ease';
+            li.style.opacity = '1';
+            li.style.transform = 'translateX(0)';
+          }, idx * 50);
+        });
+        
+        // 初始化播放器
+        initializePlayer();
+        
+        // 播放器页面淡入
+        setTimeout(() => {
+          playerPage.style.transition = 'opacity 0.5s ease';
+          playerPage.style.opacity = '1';
+        }, 300);
+      }, 300);
+    }
+
+    function backToConfig() {
+      // 销毁播放器并清理资源
+      if (player) {
+        try {
+          player.pause();
+          player.dispose();
+        } catch(e) {
+          console.log('Player disposal error:', e);
+        }
+        player = null;
+      }
+      
+      const configPage = document.getElementById('configPage');
+      const playerPage = document.getElementById('playerPage');
+      
+      // 隐藏所有消息
+      hideAllMessages();
+      
+      playerPage.style.opacity = '0';
+      setTimeout(() => {
+        playerPage.style.display = 'none';
+        configPage.style.display = 'block';
+        configPage.style.opacity = '0';
+        configPage.style.transform = 'scale(0.95)';
+        
+        setTimeout(() => {
+          configPage.style.transition = 'all 0.3s ease';
+          configPage.style.opacity = '1';
+          configPage.style.transform = 'scale(1)';
+        }, 50);
+      }, 300);
+      
+      document.title = '🎬 m3u8 剧集播放器';
+      currentEpisodeIndex = 0;
+    }
+
+    function initializePlayer() {
+      // 确保旧播放器被完全销毁
+      if (player) {
+        try {
+          player.pause();
+          player.dispose();
+        } catch(e) {
+          console.log('Player disposal error:', e);
+        }
+        player = null;
+      }
+      
+      // 确保currentEpisodeIndex为0，播放第一集
+      currentEpisodeIndex = 0;
+      
+      player = videojs('videoPlayer', {
+        autoplay: false,
+        controls: true,
+        preload: 'metadata',
+        fluid: true,
+        responsive: true,
+        sources: [{ src: episodes[0].url, type: 'application/x-mpegURL' }]
+      });
+      
+      player.ready(() => {
+        document.title = `正在播放: ${episodes[0].title}`;
+        
+        player.on('ended', () => {
+          if (currentEpisodeIndex < episodes.length - 1) {
+            setTimeout(() => playEpisode(currentEpisodeIndex + 1), 2000);
+          }
+        });
+      });
+    }
+
+    function playEpisode(idx) {
+      if (idx === currentEpisodeIndex) return;
+      
+      // 停止当前播放
+      if (player) {
+        try {
+          player.pause();
+        } catch(e) {
+          console.log('Player pause error:', e);
+        }
+      }
+      
+      currentEpisodeIndex = idx;
+      const episode = episodes[idx];
+      
+      // 切换视频源并停止之前的连接
+      if (player) {
+        try {
+          // 先暂停播放器
+          player.pause();
+          
+          // 重置播放器时间
+          player.currentTime(0);
+          
+          // 切换新的视频源
+          player.src({
+            src: episode.url,
+            type: 'application/x-mpegURL'
+          });
+          
+          // 重新加载
+          player.load();
+          
+          // 可选：自动播放新的视频
+          setTimeout(() => {
+            player.play().catch(() => {
+              console.log('Autoplay prevented');
+            });
+          }, 500);
+          
+        } catch(e) {
+          console.log('Episode switch error:', e);
+        }
+      }
+      
+      document.title = `正在播放: ${episode.title}`;
+      
+      // 更新高亮状态
+      const list = document.getElementById('episodeList');
+      Array.from(list.children).forEach((li, i) => {
+        li.classList.toggle('active', i === idx);
+      });
+    }
+
+    // 页面卸载时清理资源
+    window.addEventListener('beforeunload', () => {
+      if (player) {
+        try {
+          player.pause();
+          player.dispose();
+        } catch(e) {
+          console.log('Cleanup error:', e);
+        }
+      }
+    });
+
+    // 添加键盘快捷键支持
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        if (document.getElementById('configPage').style.display !== 'none') {
+          parseAndRender();
+        }
+      }
+      
+      if (document.getElementById('playerPage').style.display !== 'none') {
+        if (e.key === 'ArrowLeft' && currentEpisodeIndex > 0) {
+          e.preventDefault();
+          playEpisode(currentEpisodeIndex - 1);
+        } else if (e.key === 'ArrowRight' && currentEpisodeIndex < episodes.length - 1) {
+          e.preventDefault();
+          playEpisode(currentEpisodeIndex + 1);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          backToConfig();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
