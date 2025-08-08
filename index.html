@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -282,23 +281,17 @@
       padding: 32px 24px;
     }
     
-    .video-container {
-      width: 100%;
-      max-width: 1000px;
-      margin: 0 auto;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      background: #000;
-    }
-    
-    .video-container video {
-      border-radius: 16px;
+    /* 控制按钮组 */
+    .control-buttons {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     
     .back-btn {
-      position: static;
-      margin: 0 0 24px 0;
       background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(10px);
       color: #ffffff;
@@ -317,6 +310,79 @@
       background: rgba(255, 255, 255, 0.3);
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 跳过时间开关 */
+    .skip-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .skip-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .skip-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    
+    .skip-toggle.active {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .skip-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      border-radius: 4px;
+      position: relative;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .skip-toggle.active .skip-checkbox {
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+    
+    .skip-toggle.active .skip-checkbox::after {
+      content: '✓';
+      position: absolute;
+      top: -2px;
+      left: 1px;
+      color: #667eea;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .video-container {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      background: #000;
+    }
+    
+    .video-container video {
+      border-radius: 16px;
     }
     
     /* 响应式设计 */
@@ -369,6 +435,15 @@
         padding: 16px;
         min-height: unset;
       }
+      
+      .control-buttons {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .skip-controls {
+        justify-content: center;
+      }
     }
     
     @media (max-width: 600px) {
@@ -393,6 +468,16 @@
       textarea {
         min-height: 150px;
         font-size: 13px;
+      }
+      
+      .skip-controls {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .skip-toggle {
+        font-size: 13px;
+        padding: 6px 12px;
       }
     }
     
@@ -450,7 +535,19 @@
   <div class="player-layout" id="playerPage" style="display:none;">
     <ul class="episode-list" id="episodeList"></ul>
     <div class="player-main">
-      <button class="back-btn" onclick="backToConfig()">← 返回配置</button>
+      <div class="control-buttons">
+        <button class="back-btn" onclick="backToConfig()">← 返回配置</button>
+        <div class="skip-controls">
+          <div class="skip-toggle" id="skip30Toggle" onclick="toggleSkip(30)">
+            <div class="skip-checkbox"></div>
+            <span>跳过片头30s</span>
+          </div>
+          <div class="skip-toggle" id="skip60Toggle" onclick="toggleSkip(60)">
+            <div class="skip-checkbox"></div>
+            <span>跳过片头60s</span>
+          </div>
+        </div>
+      </div>
       <div class="video-container">
         <video id="videoPlayer" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="563"
           data-setup='{"playbackRates": [0.5, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 4.5 ,5]}'>
@@ -464,6 +561,7 @@
     let episodes = [];
     let player = null;
     let currentEpisodeIndex = 0;
+    let skipSeconds = 0; // 0表示不跳过，30表示跳过30秒，60表示跳过60秒
 
     function hideAllMessages() {
       const errorEl = document.getElementById('errorMessage');
@@ -549,6 +647,30 @@
       }, 800);
     }
 
+    function toggleSkip(seconds) {
+      const skip30Toggle = document.getElementById('skip30Toggle');
+      const skip60Toggle = document.getElementById('skip60Toggle');
+      
+      if (skipSeconds === seconds) {
+        // 如果点击的是已激活的选项，则关闭
+        skipSeconds = 0;
+        skip30Toggle.classList.remove('active');
+        skip60Toggle.classList.remove('active');
+      } else {
+        // 激活点击的选项，关闭另一个
+        skipSeconds = seconds;
+        skip30Toggle.classList.toggle('active', seconds === 30);
+        skip60Toggle.classList.toggle('active', seconds === 60);
+      }
+      
+      // 显示状态提示
+      if (skipSeconds === 0) {
+        console.log('已关闭自动跳过片头');
+      } else {
+        console.log(`已开启自动跳过片头 ${skipSeconds} 秒`);
+      }
+    }
+
     function renderPlayer() {
       const configPage = document.getElementById('configPage');
       const playerPage = document.getElementById('playerPage');
@@ -627,6 +749,11 @@
       
       document.title = '🎬 m3u8 剧集播放器';
       currentEpisodeIndex = 0;
+      
+      // 重置跳过设置
+      skipSeconds = 0;
+      document.getElementById('skip30Toggle').classList.remove('active');
+      document.getElementById('skip60Toggle').classList.remove('active');
     }
 
     function initializePlayer() {
@@ -655,6 +782,18 @@
       
       player.ready(() => {
         document.title = `正在播放: ${episodes[0].title}`;
+        
+        // 如果设置了跳过时间，则在视频加载后跳过
+        if (skipSeconds > 0) {
+          player.on('loadedmetadata', () => {
+            setTimeout(() => {
+              if (player && player.duration() > skipSeconds) {
+                player.currentTime(skipSeconds);
+                console.log(`已自动跳过片头 ${skipSeconds} 秒`);
+              }
+            }, 500);
+          });
+        }
         
         player.on('ended', () => {
           if (currentEpisodeIndex < episodes.length - 1) {
@@ -696,6 +835,18 @@
           
           // 重新加载
           player.load();
+          
+          // 如果设置了跳过时间，等待视频加载后跳过
+          if (skipSeconds > 0) {
+            player.one('loadedmetadata', () => {
+              setTimeout(() => {
+                if (player && player.duration() > skipSeconds) {
+                  player.currentTime(skipSeconds);
+                  console.log(`已自动跳过片头 ${skipSeconds} 秒`);
+                }
+              }, 500);
+            });
+          }
           
           // 可选：自动播放新的视频
           setTimeout(() => {
