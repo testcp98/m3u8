@@ -67,6 +67,26 @@
       font-weight: 400;
     }
     
+    /* 缓存状态提示 */
+    .cache-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+      color: #0277bd;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      border: 1px solid #81d4fa;
+      animation: slideIn 0.5s ease;
+    }
+    
+    .cache-status.hidden {
+      display: none;
+    }
+    
     textarea {
       width: 100%;
       min-height: 200px;
@@ -95,6 +115,7 @@
       gap: 16px;
       justify-content: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
     }
     
     .btn {
@@ -150,6 +171,18 @@
       background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
       transform: translateY(-1px);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+      color: #c53030;
+      box-shadow: 0 4px 12px rgba(197, 48, 48, 0.2);
+    }
+    
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #feb2b2 0%, #fc8181 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(197, 48, 48, 0.3);
     }
     
     .msg {
@@ -520,12 +553,20 @@
   <div class="center-box" id="configPage">
     <h1>🎬 m3u8 剧集播放器</h1>
     <div class="desc">✨ 输入剧集JSON配置，即可生成精美的在线播放器。支持m3u8格式，左侧选集，右侧播放。</div>
+    
+    <!-- 缓存状态提示 -->
+    <div id="cacheStatus" class="cache-status hidden">
+      <span>💾</span>
+      <span id="cacheStatusText">已加载缓存的配置数据</span>
+    </div>
+    
     <textarea id="jsonInput" placeholder='请输入JSON配置，例如：&#10;[&#10;  {"title": "第01集", "url": "https://example.com/1.m3u8"},&#10;  {"title": "第02集", "url": "https://example.com/2.m3u8"}&#10;]'></textarea>
     <div class="btn-group">
       <button class="btn btn-primary" onclick="parseAndRender()">
         <span id="generateText">🚀 生成播放器</span>
       </button>
       <button class="btn btn-secondary" onclick="clearJsonInput()">🧹 清空内容</button>
+      <button class="btn btn-danger" onclick="clearCache()" id="clearCacheBtn" style="display: none;">🗑️ 清除缓存</button>
     </div>
     <div id="errorMessage" class="msg error"></div>
     <div id="successMessage" class="msg success"></div>
@@ -562,6 +603,118 @@
     let player = null;
     let currentEpisodeIndex = 0;
     let skipSeconds = 0; // 0表示不跳过，30表示跳过30秒，60表示跳过60秒
+    
+    // 缓存相关的常量
+    const CACHE_KEY = 'm3u8_player_config';
+    const CACHE_TIMESTAMP_KEY = 'm3u8_player_timestamp';
+    const CACHE_EXPIRY_DAYS = 30; // 缓存过期天数
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCachedConfig();
+    });
+
+    // 保存配置到缓存
+    function saveConfigToCache(jsonText) {
+      try {
+        localStorage.setItem(CACHE_KEY, jsonText);
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        console.log('配置已保存到缓存');
+      } catch (e) {
+        console.log('缓存保存失败:', e);
+      }
+    }
+
+    // 从缓存加载配置
+    function loadCachedConfig() {
+      try {
+        const cachedConfig = localStorage.getItem(CACHE_KEY);
+        const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+        
+        if (cachedConfig && cacheTimestamp) {
+          // 检查缓存是否过期
+          const cacheAge = Date.now() - parseInt(cacheTimestamp);
+          const maxAge = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 转换为毫秒
+          
+          if (cacheAge < maxAge) {
+            // 缓存未过期，加载数据
+            document.getElementById('jsonInput').value = cachedConfig;
+            showCacheStatus('已加载缓存的配置数据');
+            document.getElementById('clearCacheBtn').style.display = 'inline-block';
+            
+            // 验证缓存的数据是否有效
+            try {
+              const parsedData = JSON.parse(cachedConfig);
+              if (Array.isArray(parsedData) && parsedData.length > 0) {
+                showCacheStatus(`已加载缓存数据 (${parsedData.length}集)`);
+              }
+            } catch (e) {
+              showCacheStatus('已加载缓存数据 (格式待验证)');
+            }
+          } else {
+            // 缓存已过期，清除
+            clearCache(false);
+          }
+        }
+      } catch (e) {
+        console.log('加载缓存失败:', e);
+      }
+    }
+
+    // 显示缓存状态
+    function showCacheStatus(message) {
+      const cacheStatus = document.getElementById('cacheStatus');
+      const cacheStatusText = document.getElementById('cacheStatusText');
+      
+      cacheStatusText.textContent = message;
+      cacheStatus.classList.remove('hidden');
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        cacheStatus.style.opacity = '0';
+        setTimeout(() => {
+          cacheStatus.classList.add('hidden');
+          cacheStatus.style.opacity = '1';
+        }, 300);
+      }, 3000);
+    }
+
+    // 清除缓存
+    function clearCache(showMessage = true) {
+      try {
+        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        document.getElementById('clearCacheBtn').style.display = 'none';
+        
+        if (showMessage) {
+          showSuccess('缓存已清除');
+          // 同时清空输入框
+          document.getElementById('jsonInput').value = '';
+        }
+        
+        console.log('缓存已清除');
+      } catch (e) {
+        console.log('清除缓存失败:', e);
+        if (showMessage) {
+          showError('清除缓存失败');
+        }
+      }
+    }
+
+    // 监听输入框变化，实时保存到缓存
+    document.getElementById('jsonInput').addEventListener('input', function(e) {
+      const jsonText = e.target.value.trim();
+      
+      if (jsonText.length > 10) { // 只有当内容足够长时才保存
+        saveConfigToCache(jsonText);
+        
+        // 显示清除缓存按钮
+        document.getElementById('clearCacheBtn').style.display = 'inline-block';
+      } else if (jsonText.length === 0) {
+        // 如果输入框为空，隐藏清除缓存按钮
+        document.getElementById('clearCacheBtn').style.display = 'none';
+      }
+    });
 
     function hideAllMessages() {
       const errorEl = document.getElementById('errorMessage');
@@ -630,8 +783,12 @@
           }
           
           episodes = parsedData;
+          
+          // 保存有效的配置到缓存
+          saveConfigToCache(jsonText);
+          
           generateText.innerHTML = '✨ 生成成功';
-          showSuccess(`配置解析成功！共发现 ${episodes.length} 集内容`);
+          showSuccess(`配置解析成功！共发现 ${episodes.length} 集内容，已保存到缓存`);
           
           setTimeout(() => {
             renderPlayer();
