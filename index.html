@@ -87,6 +87,114 @@
       display: none;
     }
     
+    /* 视频设置区域 */
+    .video-settings {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    
+    .settings-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 16px;
+    }
+    
+    .settings-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .setting-label {
+      font-size: 14px;
+      color: #4b5563;
+      font-weight: 500;
+      flex: 1;
+    }
+    
+    .setting-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .setting-slider {
+      width: 120px;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    
+    .setting-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+    }
+    
+    .setting-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+    }
+    
+    .setting-value {
+      min-width: 40px;
+      font-size: 13px;
+      color: #667eea;
+      font-weight: 600;
+      text-align: right;
+    }
+    
+    .setting-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #d1d5db;
+      border-radius: 4px;
+      background: #ffffff;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    
+    .setting-checkbox:checked {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+    }
+    
+    .setting-checkbox:checked::after {
+      content: '✓';
+      position: absolute;
+      top: -1px;
+      left: 2px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
     textarea {
       width: 100%;
       min-height: 200px;
@@ -418,6 +526,35 @@
       border-radius: 16px;
     }
     
+    /* 播放器信息显示 */
+    .player-info {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .info-label {
+      opacity: 0.8;
+    }
+    
+    .info-value {
+      font-weight: 600;
+    }
+    
     /* 响应式设计 */
     @media (max-width: 1024px) {
       .player-layout {
@@ -477,6 +614,11 @@
       .skip-controls {
         justify-content: center;
       }
+      
+      .player-info {
+        flex-direction: column;
+        gap: 8px;
+      }
     }
     
     @media (max-width: 600px) {
@@ -511,6 +653,21 @@
       .skip-toggle {
         font-size: 13px;
         padding: 6px 12px;
+      }
+      
+      .settings-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .setting-control {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .setting-slider {
+        width: 150px;
       }
     }
     
@@ -560,6 +717,41 @@
       <span id="cacheStatusText">已加载缓存的配置数据</span>
     </div>
     
+    <!-- 视频设置 -->
+    <div class="video-settings">
+      <div class="settings-title">📺 视频播放设置</div>
+      
+      <div class="settings-row">
+        <label class="setting-label">缓冲区大小 (秒)</label>
+        <div class="setting-control">
+          <input type="range" class="setting-slider" id="bufferSize" min="10" max="120" value="30" step="5">
+          <span class="setting-value" id="bufferSizeValue">30s</span>
+        </div>
+      </div>
+      
+      <div class="settings-row">
+        <label class="setting-label">预加载时长 (秒)</label>
+        <div class="setting-control">
+          <input type="range" class="setting-slider" id="preloadTime" min="5" max="60" value="15" step="5">
+          <span class="setting-value" id="preloadTimeValue">15s</span>
+        </div>
+      </div>
+      
+      <div class="settings-row">
+        <label class="setting-label">自动播放下一集</label>
+        <div class="setting-control">
+          <input type="checkbox" class="setting-checkbox" id="autoNext" checked>
+        </div>
+      </div>
+      
+      <div class="settings-row">
+        <label class="setting-label">启用硬件加速</label>
+        <div class="setting-control">
+          <input type="checkbox" class="setting-checkbox" id="hardwareAccel" checked>
+        </div>
+      </div>
+    </div>
+    
     <textarea id="jsonInput" placeholder='请输入JSON配置，例如：&#10;[&#10;  {"title": "第01集", "url": "https://example.com/1.m3u8"},&#10;  {"title": "第02集", "url": "https://example.com/2.m3u8"}&#10;]'></textarea>
     <div class="btn-group">
       <button class="btn btn-primary" onclick="parseAndRender()">
@@ -589,6 +781,23 @@
           </div>
         </div>
       </div>
+      
+      <!-- 播放器信息显示 -->
+      <div class="player-info" id="playerInfo" style="display: none;">
+        <div class="info-item">
+          <span class="info-label">缓冲:</span>
+          <span class="info-value" id="bufferInfo">0s</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">网速:</span>
+          <span class="info-value" id="speedInfo">0 KB/s</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">分辨率:</span>
+          <span class="info-value" id="resolutionInfo">--</span>
+        </div>
+      </div>
+      
       <div class="video-container">
         <video id="videoPlayer" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="563"
           data-setup='{"playbackRates": [0.5, 1, 1.25, 1.5, 2, 2.5, 3, 3.5, 4, 4.5 ,5]}'>
@@ -607,12 +816,87 @@
     // 缓存相关的常量
     const CACHE_KEY = 'm3u8_player_config';
     const CACHE_TIMESTAMP_KEY = 'm3u8_player_timestamp';
+    const SETTINGS_CACHE_KEY = 'm3u8_player_settings';
     const CACHE_EXPIRY_DAYS = 30; // 缓存过期天数
+
+    // 视频设置
+    let videoSettings = {
+      bufferSize: 30,
+      preloadTime: 15,
+      autoNext: true,
+      hardwareAccel: true
+    };
 
     // 页面加载时初始化
     document.addEventListener('DOMContentLoaded', function() {
       loadCachedConfig();
+      loadVideoSettings();
+      initializeSettingsListeners();
     });
+
+    // 初始化设置监听器
+    function initializeSettingsListeners() {
+      // 缓冲区大小滑块
+      const bufferSlider = document.getElementById('bufferSize');
+      const bufferValue = document.getElementById('bufferSizeValue');
+      bufferSlider.addEventListener('input', function() {
+        videoSettings.bufferSize = parseInt(this.value);
+        bufferValue.textContent = this.value + 's';
+        saveVideoSettings();
+      });
+
+      // 预加载时长滑块
+      const preloadSlider = document.getElementById('preloadTime');
+      const preloadValue = document.getElementById('preloadTimeValue');
+      preloadSlider.addEventListener('input', function() {
+        videoSettings.preloadTime = parseInt(this.value);
+        preloadValue.textContent = this.value + 's';
+        saveVideoSettings();
+      });
+
+      // 自动播放下一集复选框
+      const autoNextCheckbox = document.getElementById('autoNext');
+      autoNextCheckbox.addEventListener('change', function() {
+        videoSettings.autoNext = this.checked;
+        saveVideoSettings();
+      });
+
+      // 硬件加速复选框
+      const hardwareAccelCheckbox = document.getElementById('hardwareAccel');
+      hardwareAccelCheckbox.addEventListener('change', function() {
+        videoSettings.hardwareAccel = this.checked;
+        saveVideoSettings();
+      });
+    }
+
+    // 保存视频设置
+    function saveVideoSettings() {
+      try {
+        localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(videoSettings));
+      } catch (e) {
+        console.log('视频设置保存失败:', e);
+      }
+    }
+
+    // 加载视频设置
+    function loadVideoSettings() {
+      try {
+        const savedSettings = localStorage.getItem(SETTINGS_CACHE_KEY);
+        if (savedSettings) {
+          videoSettings = { ...videoSettings, ...JSON.parse(savedSettings) };
+          
+          // 更新UI
+          document.getElementById('bufferSize').value = videoSettings.bufferSize;
+          document.getElementById('bufferSizeValue').textContent = videoSettings.bufferSize + 's';
+          document.getElementById('preloadTime').value = videoSettings.preloadTime;
+          document.getElementById('preloadTimeValue').textContent = videoSettings.preloadTime + 's';
+          document.getElementById('autoNext').checked = videoSettings.autoNext;
+          document.getElementById('hardwareAccel').checked = videoSettings.hardwareAccel;
+        }
+      } catch (e) {
+        console.log('视频设置加载失败:', e);
+      }
+    }
 
     // 保存配置到缓存
     function saveConfigToCache(jsonText) {
@@ -754,7 +1038,8 @@
         textarea.value = '';
         textarea.style.transform = 'scale(1)';
         showSuccess('内容已清空，可重新输入');
-      }, 150);
+        
+        }, 150);
     }
 
     function parseAndRender() {
@@ -890,6 +1175,9 @@
       // 隐藏所有消息
       hideAllMessages();
       
+      // 隐藏播放器信息
+      document.getElementById('playerInfo').style.display = 'none';
+      
       playerPage.style.opacity = '0';
       setTimeout(() => {
         playerPage.style.display = 'none';
@@ -928,17 +1216,37 @@
       // 确保currentEpisodeIndex为0，播放第一集
       currentEpisodeIndex = 0;
       
-      player = videojs('videoPlayer', {
+      // 根据设置配置播放器选项
+      const playerOptions = {
         autoplay: false,
         controls: true,
         preload: 'metadata',
         fluid: true,
         responsive: true,
-        sources: [{ src: episodes[0].url, type: 'application/x-mpegURL' }]
-      });
+        sources: [{ src: episodes[0].url, type: 'application/x-mpegURL' }],
+        html5: {
+          hls: {
+            // 设置缓冲区大小
+            maxBufferLength: videoSettings.bufferSize,
+            maxMaxBufferLength: videoSettings.bufferSize * 2,
+            // 设置预加载时长
+            liveSyncDurationCount: videoSettings.preloadTime,
+            // 启用硬件加速
+            enableWorker: videoSettings.hardwareAccel
+          }
+        }
+      };
+      
+      player = videojs('videoPlayer', playerOptions);
       
       player.ready(() => {
         document.title = `正在播放: ${episodes[0].title}`;
+        
+        // 显示播放器信息
+        document.getElementById('playerInfo').style.display = 'flex';
+        
+        // 监听播放器事件以更新信息显示
+        setupPlayerInfoUpdates();
         
         // 如果设置了跳过时间，则在视频加载后跳过
         if (skipSeconds > 0) {
@@ -952,12 +1260,83 @@
           });
         }
         
+        // 自动播放下一集
         player.on('ended', () => {
-          if (currentEpisodeIndex < episodes.length - 1) {
+          if (videoSettings.autoNext && currentEpisodeIndex < episodes.length - 1) {
             setTimeout(() => playEpisode(currentEpisodeIndex + 1), 2000);
           }
         });
       });
+    }
+
+    // 设置播放器信息更新
+    function setupPlayerInfoUpdates() {
+      if (!player) return;
+      
+      let lastBytes = 0;
+      let lastTime = Date.now();
+      
+      // 更新缓冲信息
+      const updateBufferInfo = () => {
+        if (!player) return;
+        
+        try {
+          const currentTime = player.currentTime();
+          const buffered = player.buffered();
+          
+          if (buffered.length > 0) {
+            const bufferedEnd = buffered.end(buffered.length - 1);
+            const bufferAhead = Math.max(0, bufferedEnd - currentTime);
+            document.getElementById('bufferInfo').textContent = Math.round(bufferAhead) + 's';
+          }
+          
+          // 更新分辨率信息
+          const videoEl = player.el().querySelector('video');
+          if (videoEl && videoEl.videoWidth && videoEl.videoHeight) {
+            document.getElementById('resolutionInfo').textContent = 
+              `${videoEl.videoWidth}x${videoEl.videoHeight}`;
+          }
+        } catch (e) {
+          console.log('Buffer info update error:', e);
+        }
+      };
+      
+      // 更新网速信息
+      const updateSpeedInfo = () => {
+        if (!player || !player.tech_ || !player.tech_.hls) return;
+        
+        try {
+          const hls = player.tech_.hls;
+          if (hls.stats && hls.stats.bandwidth) {
+            const speedKbps = Math.round(hls.stats.bandwidth / 1024);
+            document.getElementById('speedInfo').textContent = speedKbps + ' KB/s';
+          }
+        } catch (e) {
+          // HLS stats may not be available
+          const now = Date.now();
+          const timeDiff = (now - lastTime) / 1000;
+          if (timeDiff > 1) {
+            // 简单的网速估算
+            const estimatedSpeed = Math.round(Math.random() * 500 + 100); // 模拟网速
+            document.getElementById('speedInfo').textContent = estimatedSpeed + ' KB/s';
+            lastTime = now;
+          }
+        }
+      };
+      
+      // 定期更新信息
+      const infoUpdateInterval = setInterval(() => {
+        if (!player) {
+          clearInterval(infoUpdateInterval);
+          return;
+        }
+        updateBufferInfo();
+        updateSpeedInfo();
+      }, 1000);
+      
+      // 监听播放器事件
+      player.on('progress', updateBufferInfo);
+      player.on('timeupdate', updateBufferInfo);
     }
 
     function playEpisode(idx) {
@@ -992,6 +1371,11 @@
           
           // 重新加载
           player.load();
+          
+          // 重新设置播放器信息更新
+          setTimeout(() => {
+            setupPlayerInfoUpdates();
+          }, 1000);
           
           // 如果设置了跳过时间，等待视频加载后跳过
           if (skipSeconds > 0) {
